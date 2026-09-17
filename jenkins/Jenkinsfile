@@ -1,0 +1,62 @@
+pipeline {
+    agent any
+
+    environment {
+        PROJECT_ID = 'YOUR_GCP_PROJECT_ID'
+        REGION     = 'us-central1'
+        REPO       = 'lab-repo'
+        IMAGE      = "${REGION}-docker.pkg.dev/${PROJECT_ID}/${REPO}/lab-app:${BUILD_NUMBER}"
+        CLUSTER    = 'hsbc-lab-cluster'
+    }
+
+    stages {
+        stage('Checkout') {
+            steps {
+                checkout scm
+            }
+        }
+
+        stage('Build Image') {
+            steps {
+                sh 'docker build -f docker/Dockerfile -t $IMAGE .'
+            }
+        }
+
+        stage('Security Scan') {
+            steps {
+                // Requires Trivy installed on the Jenkins agent.
+                // Fails the build on HIGH/CRITICAL vulnerabilities -- this
+                // is the SecOps gate the JD calls out.
+                sh 'trivy image --severity HIGH,CRITICAL --exit-code 1 $IMAGE'
+            }
+        }
+
+        stage('Push Image') {
+            steps {
+                sh 'gcloud auth configure-docker ${REGION}-docker.pkg.dev --quiet'
+                sh 'docker push $IMAGE'
+            }
+        }
+
+        stage('Deploy to GKE') {
+            steps {
+                sh 'gcloud container clusters get-credentials $CLUSTER --region $REGION --project $PROJECT_ID'
+                sh 'kubectl apply -f k8s/namespace.yaml'
+                sh 'kubectl set image deployment/lab-app lab-app=$IMAGE -n hsbc-lab --record'
+                sh 'kubectl rollout status deployment/lab-app -n hsbc-lab --timeout=120s'
+            }
+        }
+
+        stage('Smoke Test') {
+            steps {
+                sh 'kubectl run smoke-test --rm -i --restart=Never --image=curlimages/curl -n hsbc-lab -- curl -sf http://lab-app-svc/healthz'
+            }
+        }
+    }
+
+    post {
+        failure {
+            echo 'Pipeline failed -- check the stage logs above for the failing step.'
+        }
+    }
+}

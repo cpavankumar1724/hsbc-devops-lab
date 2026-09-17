@@ -1,0 +1,32 @@
+---
+- name: Configure lab VM with nginx
+  hosts: lab
+  become: true
+
+  vars:
+    site_message: "Configured by Ansible as part of the HSBC onboarding lab"
+
+  tasks:
+    - name: Install nginx
+      apt:
+        name: nginx
+        state: present
+        update_cache: true
+
+    - name: Deploy a custom index page
+      copy:
+        dest: /var/www/html/index.html
+        content: "<html><body><h1>{{ site_message }}</h1></body></html>"
+      notify: restart nginx
+
+    - name: Ensure nginx is running and enabled
+      service:
+        name: nginx
+        state: started
+        enabled: true
+
+  handlers:
+    - name: restart nginx
+      service:
+        name: nginx
+        state: restarted
