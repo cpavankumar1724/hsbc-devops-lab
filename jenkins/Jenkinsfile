@@ -2,7 +2,7 @@ pipeline {
     agent any
 
     environment {
-        PROJECT_ID = 'YOUR_GCP_PROJECT_ID'
+        PROJECT_ID = 'hsbc-devops-lab'
         REGION     = 'us-central1'
         REPO       = 'lab-repo'
         IMAGE      = "${REGION}-docker.pkg.dev/${PROJECT_ID}/${REPO}/lab-app:${BUILD_NUMBER}"
