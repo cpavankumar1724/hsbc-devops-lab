@@ -1,0 +1,19 @@
+#Trivy risk acceptance log
+#Reviewed by: Pavan Kumar
+#Review date: 2026-09-20
+#Next review due: 2026-12-19 (90 days) — re-check for upstream Debian fixes
+#All CVEs below affect base OS packages in python:3.12-slim.
+#No fixed version is currently published by Debian for any of them
+#(confirmed via blank "Fixed Version" column in Trivy scan output).
+#Exploitability assessed as low: all require local system access,
+#not remotely exploitable over the network this service exposes.
+#Accepted temporarily pending upstream patch availability.
+
+CVE-2026-76642
+CVE-2026-78408
+CVE-2026-78409
+CVE-2026-78410
+CVE-2026-54369
+CVE-2025-69720
+CVE-2026-16742
+CVE-2026-9538
